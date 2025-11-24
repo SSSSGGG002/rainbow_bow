@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
@@ -13,12 +11,6 @@ export async function POST(req: Request) {
             { status: 500 }
         );
     }
-
-    // Log request entry
-    try {
-        const logPath = path.join(process.cwd(), 'debug.log');
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Request received. URL: ${OPENAI_BASE_URL}\n`);
-    } catch (e) { }
 
     try {
         const { petData, type, userMessage } = await req.json();
@@ -35,14 +27,14 @@ export async function POST(req: Request) {
 1. 温暖、治愈，带一点点调皮或符合你性格的特点。
 2. 不要太悲伤，要告诉主人你在云端过得很好。
 3. 篇幅不要太长，100字以内。
-4. 称呼主人为“铲屎官”或“妈妈/爸爸”。`;
+4. 称呼主人为"铲屎官"或"妈妈/爸爸"。`;
 
         let userPrompt = "";
 
         if (type === "postcard") {
             userPrompt = "请给我写一张明信片，描述一下你在云端的生活，或者你现在的想法。";
         } else if (type === "reply") {
-            userPrompt = `主人给你写了一封信：“${userMessage}”\n请回复这封信。`;
+            userPrompt = `主人给你写了一封信："${userMessage}"\n请回复这封信。`;
         }
 
         console.log(`Calling LLM: ${OPENAI_BASE_URL}, Model: ${OPENAI_MODEL}`);
@@ -72,23 +64,8 @@ export async function POST(req: Request) {
 
         const generatedText = data.choices[0].message.content;
 
-        // Log success
-        try {
-            const logPath = path.join(process.cwd(), 'debug.log');
-            fs.appendFileSync(logPath, `[${new Date().toISOString()}] Success: ${generatedText.substring(0, 20)}...\n`);
-        } catch (e) { }
-
         return NextResponse.json({ text: generatedText });
     } catch (error: any) {
-        // Log to file for debugging
-        const logEntry = `[${new Date().toISOString()}] Error: ${error.message}\nStack: ${error.stack}\nCause: ${JSON.stringify(error.cause)}\n\n`;
-        try {
-            const logPath = path.join(process.cwd(), 'debug.log');
-            fs.appendFileSync(logPath, logEntry);
-        } catch (e) {
-            console.error("Failed to write to debug log", e);
-        }
-
         console.error("LLM Generation Error Details:", {
             message: error.message,
             cause: error.cause,
